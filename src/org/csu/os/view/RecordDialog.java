@@ -1,4 +1,4 @@
-package org.csu.os.service;
+package org.csu.os.view;
 
 import org.csu.os.domain.pojo.MyProgress;
 import org.csu.os.domain.table.RecordTable;

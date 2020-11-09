@@ -6,9 +6,9 @@ import org.csu.os.domain.signal.CPUSemaphore;
 import org.csu.os.domain.signal.PCBSemaphore;
 import org.csu.os.domain.table.*;
 import org.csu.os.service.*;
+import org.csu.os.view.component.ControllerPanel;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.ArrayList;
@@ -16,18 +16,16 @@ import java.util.ArrayList;
 import static org.csu.os.service.DispatchMode.*;
 
 public class MainFrame extends JFrame {
+    EntryFrame parentFrame;
     private boolean started = false;
-
-    private JRadioButton FCFSButton = new JRadioButton("先到先服务调度");
-    private JRadioButton SJFButton = new JRadioButton("最短作业调度");
-    private JRadioButton PSAButton = new JRadioButton("优先级调度", true);
-    private JRadioButton RRButton = new JRadioButton("轮转法调度");
+    RecordDialog recordDialog = null;
 
     private JButton startButton = new JButton("开始");
     private JButton pauseButton = new JButton("暂停");
     private JButton hangButton = new JButton("挂起");
     private JButton unHangButton = new JButton("解挂");
     private JButton recordButton = new JButton("显示日志");
+    private JButton backButton = new JButton("返回");
 
     private ControllerPanel controllerPanel;
 
@@ -48,11 +46,11 @@ public class MainFrame extends JFrame {
 
     private Box vBox = Box.createVerticalBox();
 
-    public MainFrame(int count) {
+    public MainFrame(EntryFrame parentFrame) {
+        this.parentFrame = parentFrame;
+        clear();
         CPUSemaphore.waitSemaphore();
 
-        PCBQueue.setCount(count);
-        initRadioButton();
         initButton();
         initController();
         initThreePanel();
@@ -64,59 +62,6 @@ public class MainFrame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 
-    private void initRadioButton() {
-        JPanel panel = new JPanel();
-        ButtonGroup radioButtonGroup = new ButtonGroup();
-
-        radioButtonGroup.add(FCFSButton);
-        radioButtonGroup.add(SJFButton);
-        radioButtonGroup.add(PSAButton);
-        radioButtonGroup.add(RRButton);
-
-        FCFSButton.addActionListener(event -> {
-            if (FCFSButton.isSelected()) {
-                AutoMoving.pause();
-                mode = Mode.FCFS;
-                AutoMoving.start(this);
-                showRunningData();
-                controllerPanel.setTimeSlicePanelVisible(false);
-            }
-        });
-        SJFButton.addActionListener(event -> {
-            if (SJFButton.isSelected()) {
-                AutoMoving.pause();
-                mode = Mode.SJF;
-                AutoMoving.start(this);
-                showRunningData();
-                controllerPanel.setTimeSlicePanelVisible(false);
-            }
-        });
-        PSAButton.addActionListener(event -> {
-            if (PSAButton.isSelected()) {
-                AutoMoving.pause();
-                mode =  Mode.PSA;
-                AutoMoving.start(this);
-                showRunningData();
-                controllerPanel.setTimeSlicePanelVisible(false);
-            }
-        });
-        RRButton.addActionListener(event -> {
-            if (RRButton.isSelected()) {
-                AutoMoving.pause();
-                mode = Mode.RR;
-                AutoMoving.start(this);
-                showRRRuningDate();
-                controllerPanel.setTimeSlicePanelVisible(true);
-            }
-        });
-
-        panel.add(FCFSButton);
-        panel.add(SJFButton);
-        panel.add(PSAButton);
-        panel.add(RRButton);
-        this.add(panel, BorderLayout.NORTH);
-    }
-
     private void initButton() {
         JPanel panel = new JPanel();
 
@@ -125,28 +70,29 @@ public class MainFrame extends JFrame {
         panel.add(hangButton);
         panel.add(unHangButton);
         panel.add(recordButton);
+        panel.add(backButton);
 
         startButton.addActionListener(event -> {
-            if (!started) CPUSemaphore.signalSemaphore();
-            AutoMoving.setState(true);
+            if (!started) {  // 这个是为了阻塞 一开始没有点开始的时候 不准就绪队列中的进程进入CPU
+                CPUSemaphore.signalSemaphore();
+                started = true;
+            }
             AutoMoving.start(this);
         });
-        pauseButton.addActionListener(event -> {
-            AutoMoving.setState(false);
-            AutoMoving.pause();
-        });
-
+        pauseButton.addActionListener(event -> AutoMoving.pause());
         hangButton.addActionListener(event -> {
 //            threePanel.setVisible(false);
 //             使用 setVisible 就可以来实现这个 控件的动态增删了?
             HangUp.doHangUp(this);
         });
-        unHangButton.addActionListener(event -> {
-            UnHangUp.doUnHangUp(this);
-        });
+        unHangButton.addActionListener(event -> UnHangUp.doUnHangUp(this));
         recordButton.addActionListener(event -> {
-            RecordDialog recordDialog = new RecordDialog();
+            if (recordDialog == null) recordDialog = new RecordDialog();
             recordDialog.setVisible(true);
+        });
+        backButton.addActionListener(event -> {
+            parentFrame.setVisible(true);
+            setVisible(false);
         });
 
         this.add(panel, BorderLayout.SOUTH);
@@ -160,7 +106,7 @@ public class MainFrame extends JFrame {
         JScrollPane PCBScrollPanel = new JScrollPane(PCBTable);
         PCBTablePanel.add(PCBTable.getTableHeader(), BorderLayout.NORTH);
         PCBTablePanel.add(PCBScrollPanel, BorderLayout.CENTER);
-        showPCBDate();
+        showPCBData();
         PCBScrollPanel.setPreferredSize(new Dimension(647, 300));
 
         //initBackUpTable
@@ -201,7 +147,7 @@ public class MainFrame extends JFrame {
         JScrollPane hangUpScrollPanel = new JScrollPane(hangUpTable);
         hangUpPanel.add(hangUpTable.getTableHeader(), BorderLayout.NORTH);
         hangUpPanel.add(hangUpScrollPanel, BorderLayout.CENTER);
-        showHangUpDate();
+        showHangUpData();
         hangUpScrollPanel.setPreferredSize(new Dimension(450, 300));
 
         threePanel.add(readyTablePanel, BorderLayout.WEST);
@@ -210,26 +156,33 @@ public class MainFrame extends JFrame {
         vBox.add(threePanel);
     }
 
-    public void addProgress(String name, int time, int priority) {
+    public void addProgress(String name, int time, int priority, int queueOrder) {
         MyProgress myProgress = new MyProgress();
         myProgress.setName(name);
         myProgress.setTime(time);
         myProgress.setPriority(priority);
+        myProgress.setQueueOrder(queueOrder);
 
         RecordTable.addProgress(myProgress);
-        if (PCBSemaphore.waitSemaphore(myProgress)) {
+        if (PCBSemaphore.waitSemaphore()) {
             BackUpQueue.addProgress(myProgress);
             showBackUpData();
         }
         else {
             PCBQueue.addProgress(myProgress);
-            showPCBDate();
+            showPCBData();
         }
         RecordDialog.refresh();
     }
 
     public int getHangUpTableSelectedIndex() {
+        // 如果没有选中则是返回 -1
         return hangUpTable.getSelectedRow();
+    }
+
+    public int getReadyTableSelectedIndex() {
+        // 如果没有选中则是返回 -1
+        return readyTable.getSelectedRow();
     }
 
     public void showBackUpData() {
@@ -250,7 +203,7 @@ public class MainFrame extends JFrame {
         });
     }
 
-    public void showPCBDate() {
+    public void showPCBData() {
         int count = PCBQueue.getCount();
         ArrayList<MyPCB> items = PCBQueue.getQueue();
 
@@ -269,7 +222,6 @@ public class MainFrame extends JFrame {
             }
             else {
                 tableData[i][1] = "空闲";
-                setOneRowBackgroundColor(PCBTable, i, Color.green);
             }
         }
 
@@ -284,23 +236,58 @@ public class MainFrame extends JFrame {
         int count = ReadyQueue.getCount();
         ArrayList<MyPCB> items = ReadyQueue.getQueue();
         Object[][] tableData = new Object[count][5];
-        for (int i = 0; i < count; i++) {
-            MyProgress myProgress = items.get(i).getMyProgress();
-            tableData[i][0] = items.get(i).getPid();
-            tableData[i][1] = myProgress.getName();
-            tableData[i][2] = myProgress.getTime();
-            tableData[i][3] = myProgress.getPriority();
-            tableData[i][4] = items.get(i).getNext();
-        }
-
-        readyTable.setModel(new DefaultTableModel(tableData, readyColumnName){
-            public boolean isCellEditable(int row, int column) {
-                return false;
+        if (mode == Mode.MQ) {
+            for (int i = 0; i < count; i++) {
+                MyProgress myProgress = items.get(i).getMyProgress();
+                tableData[i][0] = items.get(i).getPid();
+                tableData[i][1] = myProgress.getName();
+                if (items.get(i).getMyProgress().getQueueOrder() == 1) tableData[i][2] = "前台";
+                else tableData[i][2] = "后台";
+                tableData[i][3] = myProgress.getTime();
+                tableData[i][4] = items.get(i).getNext();
             }
-        });
+
+            readyTable.setModel(new DefaultTableModel(tableData, new String[]{"PID", "进程名称", "类型", "预计运行时间", "队尾指针"}){
+                public boolean isCellEditable(int row, int column) {
+                    return false;
+                }
+            });
+        }
+        else if (mode == Mode.MFQ) {
+            for (int i = 0; i < count; i++) {
+                MyProgress myProgress = items.get(i).getMyProgress();
+                tableData[i][0] = items.get(i).getPid();
+                tableData[i][1] = myProgress.getName();
+                tableData[i][2] = items.get(i).getMyProgress().getQueueOrder();
+                tableData[i][3] = myProgress.getTime();
+                tableData[i][4] = items.get(i).getNext();
+            }
+
+            readyTable.setModel(new DefaultTableModel(tableData, new String[]{"PID", "进程名称", "队列优先级", "预计运行时间", "队尾指针"}){
+                public boolean isCellEditable(int row, int column) {
+                    return false;
+                }
+            });
+        }
+        else {
+            for (int i = 0; i < count; i++) {
+                MyProgress myProgress = items.get(i).getMyProgress();
+                tableData[i][0] = items.get(i).getPid();
+                tableData[i][1] = myProgress.getName();
+                tableData[i][2] = myProgress.getTime();
+                tableData[i][3] = myProgress.getPriority();
+                tableData[i][4] = items.get(i).getNext();
+            }
+
+            readyTable.setModel(new DefaultTableModel(tableData, readyColumnName){
+                public boolean isCellEditable(int row, int column) {
+                    return false;
+                }
+            });
+        }
     }
 
-    public void showHangUpDate() {
+    public void showHangUpData() {
         int count = HangUpQueue.getCount();
         ArrayList<MyPCB> items = HangUpQueue.getQueue();
         Object[][] tableData = new Object[count][4];
@@ -341,7 +328,7 @@ public class MainFrame extends JFrame {
         });
     }
 
-    public void showRRRuningDate() {
+    public void showRRRuningData() {
         MyPCB myPCB = RunningPCB.getRunningPCB();
         Object[][] tableData;
         if (RunningPCB.isBusy()) {
@@ -363,53 +350,96 @@ public class MainFrame extends JFrame {
         });
     }
 
+    public void showMQRunningData() {
+        MyPCB myPCB = RunningPCB.getRunningPCB();
+        Object[][] tableData;
+        if (RunningPCB.isBusy()) {
+            if (myPCB.getMyProgress().getQueueOrder() == 1) {
+                // 前台队列 时间片轮转调度
+                tableData = new Object[1][5];
+                MyProgress myProgress = myPCB.getMyProgress();
+                tableData[0][0] = myPCB.getPid();
+                tableData[0][1] = myProgress.getName();
+                tableData[0][2] = "前台";
+                tableData[0][3] = myProgress.getTime();
+                tableData[0][4] = RunningPCB.getTimeSlice();
+
+                runningTable.setModel(new DefaultTableModel(tableData, new String[]{"PID", "进程名称", "类型", "预计运行时间", "时间片剩余时间"}){
+                    public boolean isCellEditable(int row, int column) {
+                        return false;
+                    }
+                });
+            }
+            else {
+                // 后台队列 先来先服务调度 后期可置换为优先级调度
+                tableData = new Object[1][4];
+                MyProgress myProgress = myPCB.getMyProgress();
+                tableData[0][0] = myPCB.getPid();
+                tableData[0][1] = myProgress.getName();
+                tableData[0][2] = "后台";
+                tableData[0][3] = myProgress.getTime();
+
+                runningTable.setModel(new DefaultTableModel(tableData, new String[]{"PID", "进程名称", "类型", "预计运行时间"}){
+                    public boolean isCellEditable(int row, int column) {
+                        return false;
+                    }
+                });
+            }
+        }
+        else {
+            tableData = new Object[0][];
+
+            runningTable.setModel(new DefaultTableModel(tableData, new String[]{"PID", "进程名称", "类型", "预计运行时间"}){
+                public boolean isCellEditable(int row, int column) {
+                    return false;
+                }
+            });
+        }
+    }
+
+    public void showMFQRunningData() {
+        MyPCB myPCB = RunningPCB.getRunningPCB();
+        Object[][] tableData;
+        if (RunningPCB.isBusy()) {
+            tableData = new Object[1][5];
+            MyProgress myProgress = myPCB.getMyProgress();
+            tableData[0][0] = myPCB.getPid();
+            tableData[0][1] = myProgress.getName();
+            tableData[0][2] = myProgress.getQueueOrder(); // 在多级反馈队列中 这个里面保存的是 其所属的队列的优先级 和这个队列的 时间片长度
+            tableData[0][3] = myProgress.getTime();
+            tableData[0][4] = RunningPCB.getTimeSlice();
+        }
+        else {
+            tableData = new Object[0][];
+        }
+
+        runningTable.setModel(new DefaultTableModel(tableData, new String[]{"PID", "进程名称", "队列优先级", "预计运行时间", "时间片剩余时间"}){
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        });
+    }
+
     public void refresh() {
         showBackUpData();
-        if (mode == Mode.RR) showRRRuningDate();
+        if (mode == Mode.RR) showRRRuningData();
+        else if (mode == Mode.MQ) showMQRunningData();
+        else if (mode == Mode.MFQ) showMFQRunningData();
         else showRunningData();
         showReadyData();
-        showPCBDate();
+        showPCBData();
 
         RecordDialog.refresh();
     }
 
-
-    /**
-     * 设置表格的某一行的背景色
-     * @param table
-     */
-    public void setOneRowBackgroundColor(JTable table, int rowIndex,
-                                                Color color) {
-        try {
-            DefaultTableCellRenderer tcr = new DefaultTableCellRenderer() {
-
-                public Component getTableCellRendererComponent(JTable table,
-                                                               Object value, boolean isSelected, boolean hasFocus,
-                                                               int row, int column) {
-                    if (row == rowIndex) {
-                        System.out.println("Hello");
-                        setBackground(color);
-                        setForeground(Color.WHITE);
-                    }else if(row > rowIndex){
-                        setBackground(Color.BLACK);
-                        setForeground(Color.WHITE);
-                    }else{
-                        setBackground(Color.BLACK);
-                        setForeground(Color.WHITE);
-                    }
-
-                    return super.getTableCellRendererComponent(table, value,
-                            isSelected, hasFocus, row, column);
-                }
-            };
-            int columnCount = table.getColumnCount();
-            for (int i = 0; i < columnCount; i++) {
-                table.getColumn(table.getColumnName(i)).setCellRenderer(tcr);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
+    private void clear() {
+        AutoMoving.clear();
+        BackUpQueue.clear();
+        HangUpQueue.clear();
+        ReadyQueue.clear();
+        RecordTable.clear();
+        RunningPCB.clear();
+        CPUSemaphore.clear();
+        PCBSemaphore.clear();
     }
-
-
 }

@@ -34,4 +34,9 @@ public class RecordTable {
         if (havePCBCount == 0) return 0;
         return totTime / havePCBCount;
     }
+
+    public static void clear() {
+        count = 0;
+        items.clear();
+    }
 }

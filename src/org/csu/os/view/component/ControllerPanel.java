@@ -1,20 +1,23 @@
-package org.csu.os.service;
+package org.csu.os.view.component;
 
 import org.csu.os.domain.table.RunningPCB;
+import org.csu.os.view.RecordDialog;
 import org.csu.os.view.MainFrame;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.Random;
 
+import static org.csu.os.service.DispatchMode.*;
+
 public class ControllerPanel extends JPanel {
     private MainFrame parentFrame;
+    private static int timeSlice = 8;
+    private static boolean queueOrder = true;
 
     private JTextField nameField;
     private JTextField timeField;
     private JTextField priorityField;
-
-    private JPanel timeSlicePanel;
 
     private JLabel tipLabel;
 
@@ -29,17 +32,14 @@ public class ControllerPanel extends JPanel {
         add(box, BorderLayout.CENTER);
     }
 
-    public void setTimeSlicePanelVisible(boolean visible) {
-        timeSlicePanel.setVisible(visible);
-    }
-
     private void init() {
         JLabel timeSliceDefaultLabel = new JLabel("时间片长度:");
         timeSliceDefaultLabel.setPreferredSize(new Dimension(80, 30));
         JSpinner timeSliceDefaultSpinner = new JSpinner(new SpinnerNumberModel(8, 1, 2048, 1));
         timeSliceDefaultSpinner.setPreferredSize(new Dimension(120, 30));
         timeSliceDefaultSpinner.addChangeListener(event -> {
-            RunningPCB.setTimeSliceDefault((int) timeSliceDefaultSpinner.getValue());
+            timeSlice = (int) timeSliceDefaultSpinner.getValue();
+            RunningPCB.setTimeSliceDefault(timeSlice);
         });
 
 
@@ -57,10 +57,29 @@ public class ControllerPanel extends JPanel {
         timeField.setPreferredSize(new Dimension(120, 30));
         priorityField.setPreferredSize(new Dimension(120, 30));
 
-        timeSlicePanel = new JPanel();
+        JRadioButton receptionButton = new JRadioButton("前台", true);
+        JRadioButton backgroundButton = new JRadioButton("后台");
+
+        receptionButton.addActionListener(event -> {
+            if (receptionButton.isSelected()) queueOrder = true;
+        });
+        backgroundButton.addActionListener(event -> {
+            if (backgroundButton.isSelected()) queueOrder = false;
+        });
+
+        ButtonGroup radioButtonGroup = new ButtonGroup();
+        radioButtonGroup.add(receptionButton);
+        radioButtonGroup.add(backgroundButton);
+
+        JPanel radioButtonPanel = new JPanel();
+        radioButtonPanel.add(receptionButton);
+        radioButtonPanel.add(backgroundButton);
+        if (mode != Mode.MQ) radioButtonPanel.setVisible(false);
+
+        JPanel timeSlicePanel = new JPanel();
         timeSlicePanel.add(timeSliceDefaultLabel);
         timeSlicePanel.add(timeSliceDefaultSpinner);
-        timeSlicePanel.setVisible(false);
+        if (mode != Mode.MQ && mode != Mode.RR) timeSlicePanel.setVisible(false);
 
         tipLabel = new JLabel();
         tipLabel.setPreferredSize(new Dimension(200, 30));
@@ -82,6 +101,7 @@ public class ControllerPanel extends JPanel {
         box.add(namePanel);
         box.add(timePanel);
         box.add(priorityPanel);
+        box.add(radioButtonPanel);
         box.add(tipPanel);
     }
 
@@ -128,7 +148,8 @@ public class ControllerPanel extends JPanel {
                 return;
             }
 
-            parentFrame.addProgress(name, timeToInt, priorityToInt);
+            if (queueOrder) parentFrame.addProgress(name, timeToInt, priorityToInt, 1);
+            else parentFrame.addProgress(name, timeToInt, priorityToInt, 2);
             nameField.setText("");
             timeField.setText("");
             priorityField.setText("");
@@ -145,7 +166,9 @@ public class ControllerPanel extends JPanel {
             int time = new Random().nextInt(10) + 1;
             int priority = new Random().nextInt(50) + time;
             RecordDialog.refresh();
-            parentFrame.addProgress(name, time, priority);
+
+            if (mode == Mode.MQ) parentFrame.addProgress(name, time, priority, new Random().nextInt(2) + 1);
+            else parentFrame.addProgress(name, time, priority, 1);
         });
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(confirmButton);
@@ -155,5 +178,9 @@ public class ControllerPanel extends JPanel {
 
         box.add(buttonPanel);
         box.add(buttonPanelLine2);
+    }
+
+    public static int getTimeSlice() {
+        return timeSlice;
     }
 }

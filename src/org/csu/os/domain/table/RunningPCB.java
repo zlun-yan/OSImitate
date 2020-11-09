@@ -5,7 +5,7 @@ import org.csu.os.domain.signal.CPUSemaphore;
 import org.csu.os.domain.signal.PCBSemaphore;
 
 public class RunningPCB {
-    private static MyPCB runningPCB;
+    private static MyPCB runningPCB = null;
     private static boolean busy = false;
 
     private static int timeSliceDefault = 8;
@@ -23,8 +23,8 @@ public class RunningPCB {
         RunningPCB.timeSliceDefault = timeSliceDefault;
     }
 
-    public static void updateTimeSlice() {
-        timeSlice--;
+    public static void updateTimeSlice(int step) {
+        timeSlice -= step;
     }
 
     public static void setRunningPCB(MyPCB runningPCB) {
@@ -50,7 +50,7 @@ public class RunningPCB {
 
     public static void cutRunning() {
         if (runningPCB == null) return;
-        if (runningPCB.getMyProgress().getTime() == 0) {
+        if (runningPCB.getMyProgress().getTime() <= 0) {
             finishRunning();
             return;
         }
@@ -69,5 +69,11 @@ public class RunningPCB {
 
     public static boolean isBusy() {
         return busy;
+    }
+
+    public static void clear() {
+        timeSliceDefault = 8;
+        busy = false;
+        runningPCB = null;
     }
 }

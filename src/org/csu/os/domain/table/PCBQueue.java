@@ -11,7 +11,6 @@ public class PCBQueue {
     private static int count = 6;
 
     private static void PCBInit() {
-        PCBQueue.count = count;
         items.clear();
         for (int i = 1; i <= count; i++) {
             MyPCB myPCB = new MyPCB();

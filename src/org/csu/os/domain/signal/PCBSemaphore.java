@@ -1,19 +1,14 @@
 package org.csu.os.domain.signal;
 
-import org.csu.os.domain.pojo.MyProgress;
 import org.csu.os.domain.table.BackUpQueue;
 import org.csu.os.domain.table.PCBQueue;
 
 public class PCBSemaphore {
-    private static int count = PCBQueue.getCount();
+    private static int count = 6;
 
-    public static boolean waitSemaphore(MyProgress myProgress) {
+    public static boolean waitSemaphore() {
         count--;
-        if (count < 0) {
-            return true;
-        }
-
-        return false;
+        return count < 0;
     }
 
     public static void signalSemaphore() {
@@ -21,5 +16,9 @@ public class PCBSemaphore {
         if (count <= 0) {
             BackUpQueue.wakeUp();
         }
+    }
+
+    public static void clear() {
+        count = PCBQueue.getCount();
     }
 }

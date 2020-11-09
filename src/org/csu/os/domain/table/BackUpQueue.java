@@ -29,4 +29,9 @@ public class BackUpQueue {
     public static void wakeUp() {
         PCBQueue.addProgress(getFirst());
     }
+
+    public static void clear() {
+        count = 0;
+        items.clear();
+    }
 }

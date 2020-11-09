@@ -12,109 +12,63 @@ import static org.csu.os.service.DispatchMode.*;
 public class AutoMoving {
     private static boolean state = false;
 
-    private static int step = 1;
+    private static int step = 1;  // 这个要出问题的  看看doRRMoving里面
     private static int systemTime = 0;
     private static MainFrame targetFrame;
 
     private static Timer SystemTimer;
-    private static Timer PSATimer;
-    private static Timer RRTimer;
-    private static Timer FCFSTimer;
-    private static Timer SJFTimer;
 
     public static void start(MainFrame targetFrame) {
-        if (!state) return;
+        if (state) return; // 如果已经开始了就返回吧
+        state = true;
         AutoMoving.targetFrame = targetFrame;
-        if (SystemTimer == null) {
-            SystemTimer = new Timer(true);
-            SystemTimer.schedule(new TimerTask() {
+        SystemTimer = new Timer(true);
+        SystemTimer.schedule(new TimerTask() {
 
-                @Override
-                public void run() {
-                    doMoving();
-                }
-            }, 0, 1000); // 每1000毫秒进行一次
-        }
-
-        switch (mode) {
-            case PSA:
-                PSATimer = new Timer(true);
-                PSATimer.schedule(new TimerTask() {
-
-                    @Override
-                    public void run() {
-                        doPSAMoving();
-                    }
-                }, 0, 1000); // 每1000毫秒进行一次
-                break;
-            case RR:
-                RRTimer = new Timer(true);
-                RRTimer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        doRRMoving();
-                    }
-                }, 0, 1000);
-                break;
-            case SJF:
-                SJFTimer = new Timer(true);
-                SJFTimer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        doSJFMoving();
-                    }
-                }, 0, 1000);
-                break;
-            case FCFS:
-                FCFSTimer = new Timer(true);
-                FCFSTimer.schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        doFCFSMoving();
-                    }
-                }, 0, 1000);
-                break;
-            default:
-                break;
-        }
+            @Override
+            public void run() {
+                doMoving();
+            }
+        }, 0, 1000); // 每1000毫秒进行一次
     }
 
     public static int getSystemTime() {
         return systemTime;
     }
 
-    public static void setState(boolean state) {
-        AutoMoving.state = state;
-    }
-
     public static void pause() {
+        if (!state) return;
         state = false;
-        switch (mode) {
-            case RR:
-                if (RRTimer == null) return;
-                RRTimer.cancel();
-                break;
-            case PSA:
-                if (PSATimer == null) return;
-                PSATimer.cancel();
-                break;
-            case SJF:
-                if (SJFTimer == null) return;
-                SJFTimer.cancel();
-                break;
-            case FCFS:
-                if (FCFSTimer == null) return;
-                FCFSTimer.cancel();
-                break;
-            default:
-                break;
-        }
+        SystemTimer.cancel();
         HangUp.doHangUp(targetFrame);
     }
 
     private static void doMoving() {
         systemTime++;
         ReadyQueue.updateWaitTime(step);
+
+        switch (mode) {
+            case FCFS:
+                doFCFSMoving();
+                break;
+            case PSA:
+                doPSAMoving();
+                break;
+            case RR:
+                doRRMoving();
+                break;
+            case SJF:
+                doSJFMoving();
+                break;
+            case MQ:
+                doMQMoving();
+                break;
+            case MFQ:
+                doMFQMoving();
+                break;
+            default:
+                break;
+        }
     }
 
     private static void doFCFSMoving() {
@@ -135,10 +89,6 @@ public class AutoMoving {
         myProgress.setPriority(myProgress.getPriority() - step);
         RunningPCB.cutRunning();
 
-//        System.out.println("##############################");
-//        System.out.println("CPUSemaphore count: " + CPUSemaphore.getMutex());
-//        System.out.println("PCBSemaphore count: " + PCBSemaphore.getCount());
-
         targetFrame.refresh();
     }
 
@@ -147,17 +97,52 @@ public class AutoMoving {
         if (myPCB == null) return;
         MyProgress myProgress = myPCB.getMyProgress();
         myProgress.setTime(myProgress.getTime() - step);
-        RunningPCB.updateTimeSlice();
-        if (RunningPCB.getTimeSlice() == 0 || myProgress.getTime() == 0) RunningPCB.cutRunning();
-
-//        System.out.println("##############################");
-//        System.out.println("CPUSemaphore count: " + CPUSemaphore.getMutex());
-//        System.out.println("PCBSemaphore count: " + PCBSemaphore.getCount());
+        RunningPCB.updateTimeSlice(step);  // 看吧 这里要出问题的  因为这个每次只是更新1 而已
+        if (RunningPCB.getTimeSlice() <= 0 || myProgress.getTime() <= 0) RunningPCB.cutRunning();
 
         targetFrame.refresh();
     }
 
     private static void doSJFMoving() {
         doFCFSMoving();
+    }
+
+    private static void doMQMoving() {
+        MyPCB myPCB = RunningPCB.getRunningPCB();
+        if (myPCB == null) return;
+        MyProgress myProgress = myPCB.getMyProgress();
+        myProgress.setTime(myProgress.getTime() - step);
+        if (myProgress.getQueueOrder() == 1) {
+            // 前台队列
+            RunningPCB.updateTimeSlice(step);  // 执行时间片轮转操作
+            if (RunningPCB.getTimeSlice() <= 0 || myProgress.getTime() <= 0) RunningPCB.cutRunning();
+        }
+        else {
+            // 后台队列
+//            myProgress.setPriority(myProgress.getPriority() - step);  还是不可抢占吧
+            if (myProgress.getTime() <= 0) RunningPCB.finishRunning();
+        }
+
+        targetFrame.refresh();
+    }
+
+    private static void doMFQMoving() {
+        MyPCB myPCB = RunningPCB.getRunningPCB();
+        if (myPCB == null) return;
+        MyProgress myProgress = myPCB.getMyProgress();
+        myProgress.setTime(myProgress.getTime() - step);
+        RunningPCB.updateTimeSlice(step);  // 看吧 这里要出问题的  因为这个每次只是更新1 而已
+        if (RunningPCB.getTimeSlice() <= 0 || myProgress.getTime() <= 0) {
+            myProgress.setQueueOrder(myProgress.getQueueOrder() + 1);
+            RunningPCB.cutRunning();
+        }
+
+        targetFrame.refresh();
+    }
+
+    public static void clear() {
+        pause();
+        step = 1;
+        systemTime = 0;
     }
 }

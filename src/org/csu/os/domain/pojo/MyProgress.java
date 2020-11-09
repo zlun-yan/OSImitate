@@ -5,6 +5,8 @@ public class MyProgress {
     private int priority;
     private int time;
 
+    private int queueOrder;
+
     private int startTime = -1; // 记录进程新建的时间
     private int responseTime = -1;  // 记录进程第一次得到相应花费的时间
     private int turnAroundTime = -1;  // 记录进程从开始到完成花费的时间
@@ -14,6 +16,14 @@ public class MyProgress {
 
     public MyProgress() {
 
+    }
+
+    public int getQueueOrder() {
+        return queueOrder;
+    }
+
+    public void setQueueOrder(int queueOrder) {
+        this.queueOrder = queueOrder;
     }
 
     public void setResponseTime(int responseTime) {

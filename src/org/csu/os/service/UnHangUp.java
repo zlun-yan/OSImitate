@@ -7,10 +7,14 @@ import org.csu.os.view.MainFrame;
 
 public class UnHangUp {
     public static void doUnHangUp(MainFrame mainFrame) {
-        MyPCB myPCB = HangUpQueue.PCBPop(mainFrame.getHangUpTableSelectedIndex());
+        int index = mainFrame.getHangUpTableSelectedIndex();
+        MyPCB myPCB;
+        if (index == -1) myPCB = HangUpQueue.PCBPop(0);
+        else myPCB = HangUpQueue.PCBPop(index);
+
         ReadyQueue.addPCB(myPCB);
 
         mainFrame.refresh();
-        mainFrame.showHangUpDate();
+        mainFrame.showHangUpData();
     }
 }

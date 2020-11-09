@@ -16,7 +16,7 @@ public class HangUpQueue {
     }
 
     public static MyPCB PCBPop(int index) {
-        if (index == -1) return null;
+        if (count == 0) return null;
         count--;
         return items.remove(index);
     }
@@ -27,5 +27,10 @@ public class HangUpQueue {
 
     public static int getCount() {
         return count;
+    }
+
+    public static void clear() {
+        count = 0;
+        items.clear();
     }
 }

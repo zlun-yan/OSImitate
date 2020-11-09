@@ -8,11 +8,7 @@ public class CPUSemaphore {
 
     public static boolean waitSemaphore() {
         mutex--;
-        if (mutex < 0) {
-            return true;
-        }
-
-        return false;
+        return mutex < 0;
     }
 
     public static void signalSemaphore() {
@@ -20,5 +16,9 @@ public class CPUSemaphore {
         if (mutex <= 0) {
             ReadyQueue.wakeUp();
         }
+    }
+
+    public static void clear() {
+        mutex = 1;
     }
 }

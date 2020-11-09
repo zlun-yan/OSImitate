@@ -1,14 +1,31 @@
 package org.csu.os.view;
 
+import org.csu.os.domain.table.PCBQueue;
+import org.csu.os.domain.table.RunningPCB;
+import org.csu.os.service.AutoMoving;
+import org.csu.os.service.DispatchMode;
+import org.csu.os.view.component.ControllerPanel;
+
 import javax.swing.*;
 import java.awt.*;
 
+import static org.csu.os.service.DispatchMode.mode;
+
 public class EntryFrame extends JFrame {
     private int PCBCount = 6;
+    MainFrame mainFrame = null;
+
+    private JRadioButton FCFSButton = new JRadioButton("先到先服务调度", true);
+    private JRadioButton SJFButton = new JRadioButton("最短作业调度");
+    private JRadioButton PSAButton = new JRadioButton("优先级调度");
+    private JRadioButton RRButton = new JRadioButton("轮转法调度");
+    private JRadioButton MQButton = new JRadioButton("多级队列调度");
+    private JRadioButton MFQButton = new JRadioButton("多级反馈队列调度");
 
     public EntryFrame() {
         initPanel();
         initButton();
+        initRadioButton();
 
         pack();
         setTitle("调度算法模拟");
@@ -21,9 +38,7 @@ public class EntryFrame extends JFrame {
         PCBCountLabel.setPreferredSize(new Dimension(80, 30));
         JSpinner PCBCountSpinner = new JSpinner(new SpinnerNumberModel(6, 1, 2048, 1));
         PCBCountSpinner.setPreferredSize(new Dimension(120, 30));
-        PCBCountSpinner.addChangeListener(event -> {
-            PCBCount = (int) PCBCountSpinner.getValue();
-        });
+        PCBCountSpinner.addChangeListener(event -> PCBCount = (int) PCBCountSpinner.getValue());
 
         JPanel PCBCountPanel = new JPanel();
         PCBCountPanel.add(PCBCountLabel);
@@ -32,19 +47,72 @@ public class EntryFrame extends JFrame {
         add(PCBCountPanel, BorderLayout.CENTER);
     }
 
+    private void initRadioButton() {
+        JPanel panel = new JPanel();
+        ButtonGroup radioButtonGroup = new ButtonGroup();
+
+        radioButtonGroup.add(FCFSButton);
+        radioButtonGroup.add(SJFButton);
+        radioButtonGroup.add(PSAButton);
+        radioButtonGroup.add(RRButton);
+        radioButtonGroup.add(MQButton);
+        radioButtonGroup.add(MFQButton);
+
+        FCFSButton.addActionListener(event -> {
+            if (FCFSButton.isSelected()) {
+                mode = DispatchMode.Mode.FCFS;
+            }
+        });  // 先到先服务
+        SJFButton.addActionListener(event -> {
+            if (SJFButton.isSelected()) {
+                mode = DispatchMode.Mode.SJF;
+            }
+        });  // 最短时间调度
+        PSAButton.addActionListener(event -> {
+            if (PSAButton.isSelected()) {
+                mode =  DispatchMode.Mode.PSA;
+            }
+        });  //  优先级调度
+        RRButton.addActionListener(event -> {
+            if (RRButton.isSelected()) {
+                mode = DispatchMode.Mode.RR;
+                RunningPCB.setTimeSliceDefault(ControllerPanel.getTimeSlice());
+            }
+        });  //  时间片轮转
+        MQButton.addActionListener(event -> {
+            if (MQButton.isSelected()) {
+                mode = DispatchMode.Mode.MQ;
+                RunningPCB.setTimeSliceDefault(ControllerPanel.getTimeSlice());
+            }
+        });  // 多级队列调度
+        MFQButton.addActionListener(event -> {
+            if (MFQButton.isSelected()) {
+                mode = DispatchMode.Mode.MFQ;
+            }
+        });  // 多级反馈队列调度
+
+
+        panel.add(FCFSButton);
+        panel.add(SJFButton);
+        panel.add(PSAButton);
+        panel.add(RRButton);
+        panel.add(MQButton);
+        panel.add(MFQButton);
+        add(panel, BorderLayout.NORTH);
+    }
+
     private void initButton() {
         JButton confirmButton = new JButton("开始");
         JButton cancelButton = new JButton("取消");
 
         confirmButton.addActionListener(event -> {
-            MainFrame mainFrame = new MainFrame(PCBCount);
+            PCBQueue.setCount(PCBCount);
+            if (mainFrame == null) mainFrame = new MainFrame(this);
             mainFrame.setVisible(true);
-            dispose();
+            setVisible(false);
         });
 
-        cancelButton.addActionListener(event -> {
-            dispose();
-        });
+        cancelButton.addActionListener(event -> dispose());
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(confirmButton);

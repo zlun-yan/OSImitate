@@ -24,9 +24,12 @@ public class ReadyQueue {
 
             if (mode == Mode.PSA) PCBGetPSASort();
             else if (mode == Mode.SJF) PCBGetSJFSort();
-            else refreshNextPoint();
+            else PCBGetMQAndMFQSort();
+            refreshNextPoint();
         }
         else {
+            // CPU 空闲
+            if (mode == Mode.MFQ) RunningPCB.setTimeSliceDefault((int) Math.pow(2, myPCB.getMyProgress().getQueueOrder() + 1));
             RunningPCB.setRunningPCB(myPCB);
         }
     }
@@ -35,11 +38,17 @@ public class ReadyQueue {
         if (count == 0) return null;
         if (mode == Mode.PSA) PCBGetPSASort();
         else if (mode == Mode.SJF) PCBGetSJFSort();
-        else refreshNextPoint();
+        else PCBGetMQAndMFQSort();
+        refreshNextPoint();
         count--;
 
         items.get(0).getMyProgress().setResponseTime(AutoMoving.getSystemTime());
         return items.remove(0);
+    }
+
+    public static MyPCB PCBHang(int index) {
+        count--;
+        return items.remove(index);
     }
 
     private static void PCBGetPSASort() {
@@ -63,6 +72,21 @@ public class ReadyQueue {
                 MyProgress myProgress1 = o1.getMyProgress();
                 MyProgress myProgress2 = o2.getMyProgress();
                 if (myProgress1.getTime() > myProgress2.getTime()) return 1;
+                else return -1;
+            }
+        });
+
+        refreshNextPoint();
+    }
+
+    private static void PCBGetMQAndMFQSort() {
+        Collections.sort(items, new Comparator<MyPCB>() {
+            // 只需要按照队列顺序排好就行了
+            @Override
+            public int compare(MyPCB o1, MyPCB o2) {
+                MyProgress myProgress1 = o1.getMyProgress();
+                MyProgress myProgress2 = o2.getMyProgress();
+                if (myProgress1.getQueueOrder() > myProgress2.getQueueOrder()) return 1;
                 else return -1;
             }
         });
@@ -94,5 +118,10 @@ public class ReadyQueue {
         for (int i = 0; i < count; i++) {
             items.get(i).getMyProgress().updateWaitTime(step);
         }
+    }
+
+    public static void clear() {
+        count = 0;
+        items.clear();
     }
 }
