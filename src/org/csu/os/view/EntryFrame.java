@@ -108,6 +108,30 @@ public class EntryFrame extends JFrame {
             PCBQueue.setCount(PCBCount);
             if (mainFrame == null) mainFrame = new MainFrame(this);
             else mainFrame.refresh();
+
+            switch (mode) {
+                case FCFS:
+                    mainFrame.setTitle("先到先服务调度");
+                    break;
+                case SJF:
+                    mainFrame.setTitle("最短作业调度");
+                    break;
+                case PSA:
+                    mainFrame.setTitle("优先级调度");
+                    break;
+                case RR:
+                    mainFrame.setTitle("轮转法调度");
+                    break;
+                case MQ:
+                    mainFrame.setTitle("多级队列调度");
+                    break;
+                case MFQ:
+                    mainFrame.setTitle("多级反馈队列调度");
+                    break;
+                default:
+                    break;
+            }
+
             mainFrame.setVisible(true);
             setVisible(false);
         });

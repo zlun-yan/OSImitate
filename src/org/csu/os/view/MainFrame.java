@@ -91,6 +91,7 @@ public class MainFrame extends JFrame {
             recordDialog.setVisible(true);
         });
         backButton.addActionListener(event -> {
+            clear();
             parentFrame.setVisible(true);
             setVisible(false);
         });
@@ -163,7 +164,6 @@ public class MainFrame extends JFrame {
         myProgress.setPriority(priority);
         myProgress.setQueueOrder(queueOrder);
 
-        RecordTable.addProgress(myProgress);
         if (PCBSemaphore.waitSemaphore()) {
             BackUpQueue.addProgress(myProgress);
             showBackUpData();
@@ -443,5 +443,8 @@ public class MainFrame extends JFrame {
         PCBSemaphore.clear();
         ControllerPanel.clear();
         SettingDialog.clear();
+
+        refresh();
+        showHangUpData();
     }
 }

@@ -32,6 +32,7 @@ public class PCBQueue {
         }
         // 找到一个空闲的PCB
 
+        RecordTable.addProgress(myProgress);
         myProgress.havePCB();
         myProgress.updateWaitTime(1);
         ReadyQueue.addPCB(items.get(i));
