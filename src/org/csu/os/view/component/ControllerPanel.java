@@ -87,7 +87,7 @@ public class ControllerPanel extends JPanel {
         JPanel timeSlicePanel = new JPanel();
         timeSlicePanel.add(timeSliceDefaultLabel);
         timeSlicePanel.add(timeSliceDefaultSpinner);
-        if (mode != Mode.MQ && mode != Mode.RR) timeSlicePanel.setVisible(false);
+        if (mode != Mode.MQ && mode != Mode.RR && mode != Mode.MFQ) timeSlicePanel.setVisible(false);
 
         tipLabel = new JLabel();
         tipLabel.setPreferredSize(new Dimension(200, 30));

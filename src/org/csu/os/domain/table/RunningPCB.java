@@ -31,7 +31,7 @@ public class RunningPCB {
 
     public static void setRunningPCB(MyPCB runningPCB) {
         RunningPCB.runningPCB = runningPCB;
-        if (mode == Mode.MFQ) timeSlice = runningPCB.getMyProgress().getQueueOrder();
+        if (mode == Mode.MFQ) timeSlice = runningPCB.getMyProgress().getQueueOrder() * timeSliceDefault;
         else timeSlice = timeSliceDefault;
         if (runningPCB == null) {
             busy = false;
