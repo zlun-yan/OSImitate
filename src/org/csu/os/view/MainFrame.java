@@ -441,5 +441,7 @@ public class MainFrame extends JFrame {
         RunningPCB.clear();
         CPUSemaphore.clear();
         PCBSemaphore.clear();
+        ControllerPanel.clear();
+        SettingDialog.clear();
     }
 }

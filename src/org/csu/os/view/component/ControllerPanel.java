@@ -3,6 +3,7 @@ package org.csu.os.view.component;
 import org.csu.os.domain.table.RunningPCB;
 import org.csu.os.view.RecordDialog;
 import org.csu.os.view.MainFrame;
+import org.csu.os.view.SettingDialog;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,9 +12,16 @@ import java.util.Random;
 import static org.csu.os.service.DispatchMode.*;
 
 public class ControllerPanel extends JPanel {
+    private SettingDialog settingDialog = null;
+
     private MainFrame parentFrame;
-    private static int timeSlice = 8;
+    private static int timeSlice = 4;
     private static boolean queueOrder = true;
+
+    private static int timeMinn = 1;
+    private static int timeMaxx = 10;
+    private static int priorityMinn = 1;
+    private static int priorityMaxx = 50;
 
     private JTextField nameField;
     private JTextField timeField;
@@ -35,7 +43,7 @@ public class ControllerPanel extends JPanel {
     private void init() {
         JLabel timeSliceDefaultLabel = new JLabel("时间片长度:");
         timeSliceDefaultLabel.setPreferredSize(new Dimension(80, 30));
-        JSpinner timeSliceDefaultSpinner = new JSpinner(new SpinnerNumberModel(8, 1, 2048, 1));
+        JSpinner timeSliceDefaultSpinner = new JSpinner(new SpinnerNumberModel(4, 1, 2048, 1));
         timeSliceDefaultSpinner.setPreferredSize(new Dimension(120, 30));
         timeSliceDefaultSpinner.addChangeListener(event -> {
             timeSlice = (int) timeSliceDefaultSpinner.getValue();
@@ -109,6 +117,8 @@ public class ControllerPanel extends JPanel {
         JButton confirmButton = new JButton("增加进程");
         JButton cancelButton = new JButton("清除");
         JButton randomAddButton = new JButton("随机添加");
+        JButton multiRandomButton = new JButton("随机添加十个");
+        JButton settingButton = new JButton("设置");
 
         confirmButton.addActionListener(event -> {
             tipLabel.setVisible(false);
@@ -162,25 +172,85 @@ public class ControllerPanel extends JPanel {
         });
         randomAddButton.addActionListener(event -> {
             tipLabel.setVisible(false);
-            String name = "p" + ++count;
-            int time = new Random().nextInt(10) + 1;
-            int priority = new Random().nextInt(50) + time;
-            RecordDialog.refresh();
-
-            if (mode == Mode.MQ) parentFrame.addProgress(name, time, priority, new Random().nextInt(2) + 1);
-            else parentFrame.addProgress(name, time, priority, 1);
+            randomAdd();
         });
+        multiRandomButton.addActionListener(event -> {
+            tipLabel.setVisible(false);
+            for (int i = 0; i < 10; i++) {
+                randomAdd();
+            }
+        });
+        settingButton.addActionListener(event -> {
+            if (settingDialog == null) settingDialog = new SettingDialog();
+            settingDialog.setVisible(true);
+        });
+
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(confirmButton);
         buttonPanel.add(cancelButton);
+
         JPanel buttonPanelLine2 = new JPanel();
         buttonPanelLine2.add(randomAddButton);
+        buttonPanelLine2.add(multiRandomButton);
+
+        JPanel buttonPanelLine3 = new JPanel();
+        buttonPanelLine3.add(settingButton);
 
         box.add(buttonPanel);
         box.add(buttonPanelLine2);
+        box.add(buttonPanelLine3);
+    }
+
+    private void randomAdd() {
+        String name = "RandomTask" + ++count;
+        int time = new Random().nextInt(timeMaxx - timeMinn) + timeMinn;
+        int priority = new Random().nextInt(priorityMaxx - priorityMinn) + priorityMinn;
+        RecordDialog.refresh();
+
+        if (mode == Mode.MQ) parentFrame.addProgress(name, time, priority, new Random().nextInt(2) + 1);
+        else parentFrame.addProgress(name, time, priority, 1);
+    }
+
+    public static int getTimeMinn() {
+        return timeMinn;
+    }
+
+    public static void setTimeMinn(int timeMinn) {
+        ControllerPanel.timeMinn = timeMinn;
+    }
+
+    public static int getTimeMaxx() {
+        return timeMaxx;
+    }
+
+    public static void setTimeMaxx(int timeMaxx) {
+        ControllerPanel.timeMaxx = timeMaxx;
+    }
+
+    public static int getPriorityMinn() {
+        return priorityMinn;
+    }
+
+    public static void setPriorityMinn(int priorityMinn) {
+        ControllerPanel.priorityMinn = priorityMinn;
+    }
+
+    public static int getPriorityMaxx() {
+        return priorityMaxx;
+    }
+
+    public static void setPriorityMaxx(int priorityMaxx) {
+        ControllerPanel.priorityMaxx = priorityMaxx;
     }
 
     public static int getTimeSlice() {
         return timeSlice;
+    }
+
+    public static void clear() {
+        timeMinn = 1;
+        timeMaxx = 10;
+        priorityMinn = 1;
+        priorityMaxx = 50;
     }
 }

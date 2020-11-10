@@ -103,20 +103,18 @@ public class EntryFrame extends JFrame {
 
     private void initButton() {
         JButton confirmButton = new JButton("开始");
-        JButton cancelButton = new JButton("取消");
 
         confirmButton.addActionListener(event -> {
             PCBQueue.setCount(PCBCount);
             if (mainFrame == null) mainFrame = new MainFrame(this);
+            else mainFrame.refresh();
             mainFrame.setVisible(true);
             setVisible(false);
         });
 
-        cancelButton.addActionListener(event -> dispose());
 
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(confirmButton);
-        buttonPanel.add(cancelButton);
         add(buttonPanel, BorderLayout.SOUTH);
     }
 }
