@@ -4,6 +4,7 @@ import org.csu.os.domain.table.RunningPCB;
 import org.csu.os.view.RecordDialog;
 import org.csu.os.view.MainFrame;
 import org.csu.os.view.SettingDialog;
+import org.jb2011.lnf.beautyeye.ch3_button.BEButtonUI;
 
 import javax.swing.*;
 import java.awt.*;
@@ -123,6 +124,8 @@ public class ControllerPanel extends JPanel {
         JButton multiRandomButton = new JButton("随机添加十个");
         JButton settingButton = new JButton("设置");
 
+        multiRandomButton.setUI(new BEButtonUI().setNormalColor(BEButtonUI.NormalColor.lightBlue));
+
         confirmButton.addActionListener(event -> {
             tipLabel.setVisible(false);
             String name = nameField.getText();
@@ -206,7 +209,7 @@ public class ControllerPanel extends JPanel {
     }
 
     private void randomAdd() {
-        String name = "RandomTask" + ++count;
+        String name = "Random_" + ++count;
         int time = new Random().nextInt(timeMaxx - timeMinn) + timeMinn;
         int priority = new Random().nextInt(priorityMaxx - priorityMinn) + priorityMinn;
         RecordDialog.refresh();

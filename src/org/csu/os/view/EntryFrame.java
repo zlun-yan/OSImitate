@@ -3,9 +3,9 @@ package org.csu.os.view;
 import org.csu.os.domain.signal.PCBSemaphore;
 import org.csu.os.domain.table.PCBQueue;
 import org.csu.os.domain.table.RunningPCB;
-import org.csu.os.service.AutoMoving;
 import org.csu.os.service.DispatchMode;
 import org.csu.os.view.component.ControllerPanel;
+import org.jb2011.lnf.beautyeye.ch3_button.BEButtonUI;
 
 import javax.swing.*;
 import java.awt.*;
@@ -104,6 +104,7 @@ public class EntryFrame extends JFrame {
 
     private void initButton() {
         JButton confirmButton = new JButton("开始");
+        confirmButton.setUI(new BEButtonUI().setNormalColor(BEButtonUI.NormalColor.red));
 
         confirmButton.addActionListener(event -> {
             PCBQueue.setCount(PCBCount);

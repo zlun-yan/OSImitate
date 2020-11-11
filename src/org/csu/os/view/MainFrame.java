@@ -7,6 +7,7 @@ import org.csu.os.domain.signal.PCBSemaphore;
 import org.csu.os.domain.table.*;
 import org.csu.os.service.*;
 import org.csu.os.view.component.ControllerPanel;
+import org.jb2011.lnf.beautyeye.ch3_button.BEButtonUI;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -69,6 +70,9 @@ public class MainFrame extends JFrame {
 
     private void initButton() {
         JPanel panel = new JPanel();
+
+        startButton.setUI(new BEButtonUI().setNormalColor(BEButtonUI.NormalColor.green));
+        pauseButton.setUI(new BEButtonUI().setNormalColor(BEButtonUI.NormalColor.red));
 
         panel.add(startButton);
         panel.add(pauseButton);
