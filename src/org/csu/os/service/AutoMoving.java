@@ -29,7 +29,7 @@ public class AutoMoving {
             public void run() {
                 doMoving();
             }
-        }, 0, 1000); // 每1000毫秒进行一次
+        }, 0, 100); // 每100毫秒进行一次
     }
 
     public static int getSystemTime() {

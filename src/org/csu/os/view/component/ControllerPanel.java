@@ -29,13 +29,17 @@ public class ControllerPanel extends JPanel {
 
     private JLabel tipLabel;
 
+    private JPanel timeSlicePanel;
+    private JPanel radioButtonPanel;
+
     private Box box = Box.createVerticalBox();
-    private int count = 0;
+    private static int count = 0;
 
     public ControllerPanel(MainFrame parentFrame) {
         this.parentFrame = parentFrame;
         init();
         initButton();
+        refresh();
 
         add(box, BorderLayout.CENTER);
     }
@@ -51,9 +55,9 @@ public class ControllerPanel extends JPanel {
         });
 
 
-        JLabel nameLabel = new JLabel("进程名称:", SwingConstants.CENTER);
-        JLabel timeLabel = new JLabel("预计运行时间:", SwingConstants.CENTER);
-        JLabel priorityLabel = new JLabel("优先级:", SwingConstants.CENTER);
+        JLabel nameLabel = new JLabel("进程名称:");
+        JLabel timeLabel = new JLabel("预计运行时间:");
+        JLabel priorityLabel = new JLabel("优先级:");
         nameLabel.setPreferredSize(new Dimension(80, 30));
         timeLabel.setPreferredSize(new Dimension(80, 30));
         priorityLabel.setPreferredSize(new Dimension(80, 30));
@@ -79,15 +83,14 @@ public class ControllerPanel extends JPanel {
         radioButtonGroup.add(receptionButton);
         radioButtonGroup.add(backgroundButton);
 
-        JPanel radioButtonPanel = new JPanel();
+        radioButtonPanel = new JPanel();
         radioButtonPanel.add(receptionButton);
         radioButtonPanel.add(backgroundButton);
-        if (mode != Mode.MQ) radioButtonPanel.setVisible(false);
 
-        JPanel timeSlicePanel = new JPanel();
+        timeSlicePanel = new JPanel();
         timeSlicePanel.add(timeSliceDefaultLabel);
         timeSlicePanel.add(timeSliceDefaultSpinner);
-        if (mode != Mode.MQ && mode != Mode.RR && mode != Mode.MFQ) timeSlicePanel.setVisible(false);
+
 
         tipLabel = new JLabel();
         tipLabel.setPreferredSize(new Dimension(200, 30));
@@ -188,17 +191,18 @@ public class ControllerPanel extends JPanel {
         JPanel buttonPanel = new JPanel();
         buttonPanel.add(confirmButton);
         buttonPanel.add(cancelButton);
+        buttonPanel.add(settingButton);
 
         JPanel buttonPanelLine2 = new JPanel();
         buttonPanelLine2.add(randomAddButton);
         buttonPanelLine2.add(multiRandomButton);
 
-        JPanel buttonPanelLine3 = new JPanel();
-        buttonPanelLine3.add(settingButton);
+//        JPanel buttonPanelLine3 = new JPanel();
+//        buttonPanelLine3.add(settingButton);
 
         box.add(buttonPanel);
         box.add(buttonPanelLine2);
-        box.add(buttonPanelLine3);
+//        box.add(buttonPanelLine3);
     }
 
     private void randomAdd() {
@@ -248,9 +252,18 @@ public class ControllerPanel extends JPanel {
     }
 
     public static void clear() {
+        count = 0;
         timeMinn = 1;
         timeMaxx = 10;
         priorityMinn = 1;
         priorityMaxx = 50;
+    }
+
+    public void refresh() {
+        if (mode != Mode.MQ && mode != Mode.RR && mode != Mode.MFQ) timeSlicePanel.setVisible(false);
+        else timeSlicePanel.setVisible(true);
+
+        if (mode != Mode.MQ) radioButtonPanel.setVisible(false);
+        else radioButtonPanel.setVisible(true);
     }
 }

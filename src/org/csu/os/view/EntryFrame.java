@@ -1,5 +1,6 @@
 package org.csu.os.view;
 
+import org.csu.os.domain.signal.PCBSemaphore;
 import org.csu.os.domain.table.PCBQueue;
 import org.csu.os.domain.table.RunningPCB;
 import org.csu.os.service.AutoMoving;
@@ -106,6 +107,7 @@ public class EntryFrame extends JFrame {
 
         confirmButton.addActionListener(event -> {
             PCBQueue.setCount(PCBCount);
+            PCBSemaphore.setCount(PCBCount);
             if (mainFrame == null) mainFrame = new MainFrame(this);
             else mainFrame.refresh();
 

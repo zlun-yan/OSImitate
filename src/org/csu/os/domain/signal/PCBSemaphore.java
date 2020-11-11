@@ -21,4 +21,8 @@ public class PCBSemaphore {
     public static void clear() {
         count = PCBQueue.getCount();
     }
+
+    public static void setCount(int count) {
+        PCBSemaphore.count = count;
+    }
 }
